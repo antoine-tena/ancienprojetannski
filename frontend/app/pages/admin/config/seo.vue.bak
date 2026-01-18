@@ -1,0 +1,564 @@
+<template>
+  <div :style="{
+    display: 'flex',
+    minHeight: '100vh',
+    background: '#ffffff'
+  }">
+    <AdminSidebar title="SEO">
+      <button
+        @click="saveSEO"
+        :disabled="loading"
+        :style="{
+          width: '100%',
+          padding: '12px',
+          background: loading ? '#6c757d' : '#28a745',
+          color: 'white',
+          border: 'none',
+          borderRadius: '4px',
+          fontWeight: 'bold',
+          cursor: loading ? 'not-allowed' : 'pointer',
+          fontSize: '16px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px'
+        }"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 20px; height: 20px;">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        {{ loading ? 'Enregistrement...' : 'Enregistrer' }}
+      </button>
+    </AdminSidebar>
+
+    <div :style="{
+      flex: 1,
+      padding: '40px',
+      maxWidth: '800px'
+    }">
+      <h1 :style="{
+        fontSize: '32px',
+        fontWeight: 'bold',
+        marginBottom: '30px',
+        color: '#212529'
+      }">
+        Configuration SEO
+      </h1>
+
+      <div v-if="error" :style="{
+        padding: '15px',
+        background: '#f8d7da',
+        border: '1px solid #f5c6cb',
+        borderRadius: '4px',
+        color: '#721c24',
+        marginBottom: '20px'
+      }">
+        {{ error }}
+      </div>
+
+      <div v-if="success" :style="{
+        padding: '15px',
+        background: '#d4edda',
+        border: '1px solid #c3e6cb',
+        borderRadius: '4px',
+        color: '#155724',
+        marginBottom: '20px'
+      }">
+        {{ success }}
+      </div>
+
+      <!-- Meta Tags généraux -->
+      <AccordionItem :default-open="true">
+        <template #title>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 20px; height: 20px;">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6z" />
+            </svg>
+            <span>Meta Tags généraux</span>
+          </div>
+        </template>
+        
+        <div :style="{ marginBottom: '20px' }">
+          <label :style="{
+            display: 'block',
+            marginBottom: '8px',
+            fontWeight: 'bold',
+            color: '#495057'
+          }">
+            Titre du site (Title Tag)
+          </label>
+          <input 
+            v-model="form.site_title"
+            type="text"
+            placeholder="Mon Site Web - Description courte"
+            :style="{
+              width: '100%',
+              padding: '10px',
+              border: '1px solid #ced4da',
+              borderRadius: '4px',
+              fontSize: '16px'
+            }"
+          />
+          <small :style="{ color: '#6c757d', fontSize: '12px' }">
+            Recommandé: 50-60 caractères
+          </small>
+        </div>
+
+        <div :style="{ marginBottom: '20px' }">
+          <label :style="{
+            display: 'block',
+            marginBottom: '8px',
+            fontWeight: 'bold',
+            color: '#495057'
+          }">
+            Description (Meta Description)
+          </label>
+          <textarea 
+            v-model="form.site_description"
+            placeholder="Description complète de votre site web..."
+            :style="{
+              width: '100%',
+              padding: '10px',
+              border: '1px solid #ced4da',
+              borderRadius: '4px',
+              fontSize: '16px',
+              minHeight: '100px',
+              resize: 'vertical'
+            }"
+          />
+          <small :style="{ color: '#6c757d', fontSize: '12px' }">
+            Recommandé: 150-160 caractères
+          </small>
+        </div>
+
+        <div>
+          <label :style="{
+            display: 'block',
+            marginBottom: '8px',
+            fontWeight: 'bold',
+            color: '#495057'
+          }">
+            Mots-clés (Keywords)
+          </label>
+          <input 
+            v-model="form.keywords"
+            type="text"
+            placeholder="mot-clé1, mot-clé2, mot-clé3"
+            :style="{
+              width: '100%',
+              padding: '10px',
+              border: '1px solid #ced4da',
+              borderRadius: '4px',
+              fontSize: '16px'
+            }"
+          />
+          <small :style="{ color: '#6c757d', fontSize: '12px' }">
+            Séparez les mots-clés par des virgules
+          </small>
+        </div>
+      </AccordionItem>
+
+      <!-- Open Graph (Facebook) -->
+      <AccordionItem :style="{ marginTop: '15px' }">
+        <template #title>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 20px; height: 20px;">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
+            </svg>
+            <span>Open Graph (Facebook)</span>
+          </div>
+        </template>
+
+        <div :style="{ marginBottom: '20px' }">
+          <label :style="{
+            display: 'block',
+            marginBottom: '8px',
+            fontWeight: 'bold',
+            color: '#495057'
+          }">
+            Titre OG
+          </label>
+          <input 
+            v-model="form.og_title"
+            type="text"
+            placeholder="Titre pour les partages Facebook"
+            :style="{
+              width: '100%',
+              padding: '10px',
+              border: '1px solid #ced4da',
+              borderRadius: '4px',
+              fontSize: '16px'
+            }"
+          />
+        </div>
+
+        <div :style="{ marginBottom: '20px' }">
+          <label :style="{
+            display: 'block',
+            marginBottom: '8px',
+            fontWeight: 'bold',
+            color: '#495057'
+          }">
+            Description OG
+          </label>
+          <textarea 
+            v-model="form.og_description"
+            placeholder="Description pour les partages Facebook"
+            :style="{
+              width: '100%',
+              padding: '10px',
+              border: '1px solid #ced4da',
+              borderRadius: '4px',
+              fontSize: '16px',
+              minHeight: '80px',
+              resize: 'vertical'
+            }"
+          />
+        </div>
+
+        <div>
+          <label :style="{
+            display: 'block',
+            marginBottom: '8px',
+            fontWeight: 'bold',
+            color: '#495057'
+          }">
+            Image OG (URL)
+          </label>
+          <input 
+            v-model="form.og_image"
+            type="url"
+            placeholder="https://monsite.com/image.jpg"
+            :style="{
+              width: '100%',
+              padding: '10px',
+              border: '1px solid #ced4da',
+              borderRadius: '4px',
+              fontSize: '16px'
+            }"
+          />
+          <small :style="{ color: '#6c757d', fontSize: '12px' }">
+            Recommandé: 1200x630px
+          </small>
+        </div>
+      </AccordionItem>
+
+      <!-- Twitter Cards -->
+      <AccordionItem :style="{ marginTop: '15px' }">
+        <template #title>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 20px; height: 20px;">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.76c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a1.526 1.526 0 011.037-.443 48.282 48.282 0 005.68-.494c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
+            </svg>
+            <span>Twitter Cards</span>
+          </div>
+        </template>
+
+        <div :style="{ marginBottom: '20px' }">
+          <label :style="{
+            display: 'block',
+            marginBottom: '8px',
+            fontWeight: 'bold',
+            color: '#495057'
+          }">
+            Type de carte
+          </label>
+          <BaseSelectInput 
+            v-model="form.twitter_card_type"
+            :options="[
+              { value: 'summary', label: 'Summary' },
+              { value: 'summary_large_image', label: 'Summary Large Image' },
+              { value: 'app', label: 'App' },
+              { value: 'player', label: 'Player' }
+            ]"
+          />
+        </div>
+
+        <div :style="{ marginBottom: '20px' }">
+          <label :style="{
+            display: 'block',
+            marginBottom: '8px',
+            fontWeight: 'bold',
+            color: '#495057'
+          }">
+            Titre Twitter
+          </label>
+          <input 
+            v-model="form.twitter_title"
+            type="text"
+            placeholder="Titre pour les partages Twitter"
+            :style="{
+              width: '100%',
+              padding: '10px',
+              border: '1px solid #ced4da',
+              borderRadius: '4px',
+              fontSize: '16px'
+            }"
+          />
+        </div>
+
+        <div :style="{ marginBottom: '20px' }">
+          <label :style="{
+            display: 'block',
+            marginBottom: '8px',
+            fontWeight: 'bold',
+            color: '#495057'
+          }">
+            Description Twitter
+          </label>
+          <textarea 
+            v-model="form.twitter_description"
+            placeholder="Description pour les partages Twitter"
+            :style="{
+              width: '100%',
+              padding: '10px',
+              border: '1px solid #ced4da',
+              borderRadius: '4px',
+              fontSize: '16px',
+              minHeight: '80px',
+              resize: 'vertical'
+            }"
+          />
+        </div>
+
+        <div>
+          <label :style="{
+            display: 'block',
+            marginBottom: '8px',
+            fontWeight: 'bold',
+            color: '#495057'
+          }">
+            Image Twitter (URL)
+          </label>
+          <input 
+            v-model="form.twitter_image"
+            type="url"
+            placeholder="https://monsite.com/image.jpg"
+            :style="{
+              width: '100%',
+              padding: '10px',
+              border: '1px solid #ced4da',
+              borderRadius: '4px',
+              fontSize: '16px'
+            }"
+          />
+        </div>
+      </AccordionItem>
+
+      <!-- Robots & Sitemap -->
+      <AccordionItem :style="{ marginTop: '15px' }">
+        <template #title>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 20px; height: 20px;">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
+            </svg>
+            <span>Robots & Indexation</span>
+          </div>
+        </template>
+
+        <div :style="{ marginBottom: '20px' }">
+          <label :style="{
+            display: 'block',
+            marginBottom: '8px',
+            fontWeight: 'bold',
+            color: '#495057'
+          }">
+            <input 
+              v-model="form.robots_index"
+              type="checkbox"
+              :style="{ marginRight: '8px' }"
+            />
+            Autoriser l'indexation par les moteurs de recherche
+          </label>
+        </div>
+
+        <div :style="{ marginBottom: '20px' }">
+          <label :style="{
+            display: 'block',
+            marginBottom: '8px',
+            fontWeight: 'bold',
+            color: '#495057'
+          }">
+            <input 
+              v-model="form.robots_follow"
+              type="checkbox"
+              :style="{ marginRight: '8px' }"
+            />
+            Autoriser le suivi des liens
+          </label>
+        </div>
+
+        <div>
+          <label :style="{
+            display: 'block',
+            marginBottom: '8px',
+            fontWeight: 'bold',
+            color: '#495057'
+          }">
+            URL du Sitemap
+          </label>
+          <input 
+            v-model="form.sitemap_url"
+            type="url"
+            placeholder="https://monsite.com/sitemap.xml"
+            :style="{
+              width: '100%',
+              padding: '10px',
+              border: '1px solid #ced4da',
+              borderRadius: '4px',
+              fontSize: '16px'
+            }"
+          />
+        </div>
+      </AccordionItem>
+
+      <!-- Structured Data (Schema.org) -->
+      <AccordionItem :style="{ marginTop: '15px' }">
+        <template #title>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 20px; height: 20px;">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
+            </svg>
+            <span>Données structurées (Schema.org)</span>
+          </div>
+        </template>
+
+        <div :style="{ marginBottom: '20px' }">
+          <label :style="{
+            display: 'block',
+            marginBottom: '8px',
+            fontWeight: 'bold',
+            color: '#495057'
+          }">
+            Type d'organisation
+          </label>
+          <BaseSelectInput 
+            v-model="form.schema_type"
+            :options="[
+              { value: 'Organization', label: 'Organisation' },
+              { value: 'LocalBusiness', label: 'Commerce local' },
+              { value: 'Corporation', label: 'Entreprise' },
+              { value: 'EducationalOrganization', label: 'Organisation éducative' },
+              { value: 'GovernmentOrganization', label: 'Organisation gouvernementale' }
+            ]"
+          />
+        </div>
+
+        <div :style="{ marginBottom: '20px' }">
+          <label :style="{
+            display: 'block',
+            marginBottom: '8px',
+            fontWeight: 'bold',
+            color: '#495057'
+          }">
+            Nom de l'organisation
+          </label>
+          <input 
+            v-model="form.schema_name"
+            type="text"
+            placeholder="Mon Entreprise"
+            :style="{
+              width: '100%',
+              padding: '10px',
+              border: '1px solid #ced4da',
+              borderRadius: '4px',
+              fontSize: '16px'
+            }"
+          />
+        </div>
+
+        <div>
+          <label :style="{
+            display: 'block',
+            marginBottom: '8px',
+            fontWeight: 'bold',
+            color: '#495057'
+          }">
+            Logo de l'organisation (URL)
+          </label>
+          <input 
+            v-model="form.schema_logo"
+            type="url"
+            placeholder="https://monsite.com/logo.png"
+            :style="{
+              width: '100%',
+              padding: '10px',
+              border: '1px solid #ced4da',
+              borderRadius: '4px',
+              fontSize: '16px'
+            }"
+          />
+        </div>
+      </AccordionItem>
+    </div>
+  </div>
+</template>
+
+<script setup>
+definePageMeta({
+  middleware: 'auth'
+})
+
+const form = ref({
+  // Meta tags généraux
+  site_title: '',
+  site_description: '',
+  keywords: '',
+  
+  // Open Graph
+  og_title: '',
+  og_description: '',
+  og_image: '',
+  
+  // Twitter
+  twitter_card_type: 'summary_large_image',
+  twitter_title: '',
+  twitter_description: '',
+  twitter_image: '',
+  
+  // Robots
+  robots_index: true,
+  robots_follow: true,
+  sitemap_url: '',
+  
+  // Schema.org
+  schema_type: 'Organization',
+  schema_name: '',
+  schema_logo: ''
+})
+
+const loading = ref(false)
+const error = ref('')
+const success = ref('')
+
+async function saveSEO() {
+  loading.value = true
+  error.value = ''
+  success.value = ''
+
+  try {
+    // TODO: Implémenter l'API backend pour sauvegarder les données SEO
+    // Pour l'instant, on simule la sauvegarde
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    success.value = 'Configuration SEO enregistrée avec succès !'
+    
+    setTimeout(() => {
+      success.value = ''
+    }, 3000)
+  } catch (err) {
+    error.value = 'Erreur lors de l\'enregistrement'
+    console.error(err)
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(async () => {
+  const { ensureCsrfToken } = useAuth()
+  await ensureCsrfToken()
+  
+  // TODO: Charger les données SEO depuis l'API
+})
+</script>

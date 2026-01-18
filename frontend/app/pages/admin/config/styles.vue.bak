@@ -1,0 +1,571 @@
+<template>
+  <div :style="{
+    display: 'flex',
+    minHeight: '100vh',
+    background: '#ffffff'
+  }">
+    <AdminSidebar title="Styles">
+      <div :style="{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '10px'
+      }">
+        <button
+          @click="activeTab = 'list'"
+          :style="{
+            padding: '12px',
+            background: activeTab === 'list' ? '#007bff' : '#e9ecef',
+            color: activeTab === 'list' ? 'white' : '#495057',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontWeight: '500',
+            textAlign: 'left'
+          }"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 20px; height: 20px; display: inline-block; vertical-align: middle; margin-right: 8px;">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+          </svg>
+          Liste des thèmes
+        </button>
+        <button
+          @click="createNewTheme"
+          :style="{
+            padding: '12px',
+            background: '#28a745',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontWeight: 'bold'
+          }"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 20px; height: 20px; display: inline-block; vertical-align: middle; margin-right: 8px;">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          Nouveau thème
+        </button>
+      </div>
+    </AdminSidebar>
+
+    <div :style="{
+      flex: 1,
+      padding: '40px',
+      maxWidth: '900px'
+    }">
+      <!-- Liste des thèmes -->
+      <div v-if="activeTab === 'list'">
+        <h1 :style="{
+          fontSize: '32px',
+          fontWeight: 'bold',
+          marginBottom: '30px',
+          color: '#212529'
+        }">
+          Thèmes
+        </h1>
+
+        <div v-if="themes.length === 0" :style="{
+          padding: '40px',
+          textAlign: 'center',
+          color: '#6c757d'
+        }">
+          Aucun thème. Créez-en un pour commencer.
+        </div>
+
+        <div 
+          v-for="theme in themes" 
+          :key="theme.id"
+          :style="{
+            padding: '20px',
+            background: theme.is_active ? '#e7f5ff' : '#f8f9fa',
+            border: '1px solid',
+            borderColor: theme.is_active ? '#339af0' : '#dee2e6',
+            borderRadius: '8px',
+            marginBottom: '15px',
+            cursor: 'pointer'
+          }"
+          @click="editTheme(theme)"
+        >
+          <div :style="{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }">
+            <div>
+              <h3 :style="{
+                margin: '0 0 5px 0',
+                fontSize: '20px',
+                fontWeight: 'bold',
+                color: '#212529'
+              }">
+                {{ theme.name }}
+                <span v-if="theme.is_active" :style="{
+                  marginLeft: '10px',
+                  padding: '4px 8px',
+                  background: '#339af0',
+                  color: 'white',
+                  fontSize: '12px',
+                  borderRadius: '4px'
+                }">
+                  ACTIF
+                </span>
+              </h3>
+              <p :style="{
+                margin: 0,
+                color: '#6c757d',
+                fontSize: '14px'
+              }">
+                Pack: {{ theme.font_pack }} • Taille: {{ theme.base_font_size }}px
+              </p>
+            </div>
+            <div :style="{
+              display: 'flex',
+              gap: '10px'
+            }">
+              <div 
+                v-for="color in [theme.color_primary, theme.color_secondary, theme.color_accent]"
+                :key="color"
+                :style="{
+                  width: '30px',
+                  height: '30px',
+                  borderRadius: '50%',
+                  background: color,
+                  border: '2px solid white',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Édition de thème -->
+      <div v-if="activeTab === 'edit'">
+        <div :style="{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '30px'
+        }">
+          <h1 :style="{
+            fontSize: '32px',
+            fontWeight: 'bold',
+            margin: 0,
+            color: '#212529'
+          }">
+            {{ currentTheme.id ? 'Modifier le thème' : 'Nouveau thème' }}
+          </h1>
+          <div :style="{ display: 'flex', gap: '10px' }">
+            <button
+              @click="activeTab = 'list'"
+              :style="{
+                padding: '10px 20px',
+                background: '#6c757d',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontWeight: 'bold'
+              }"
+            >
+              Annuler
+            </button>
+            <button
+              @click="saveTheme"
+              :disabled="loading"
+              :style="{
+                padding: '10px 20px',
+                background: loading ? '#6c757d' : '#28a745',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                fontWeight: 'bold'
+              }"
+            >
+              <svg v-if="!loading" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 20px; height: 20px; display: inline-block; vertical-align: middle; margin-right: 8px;">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
+              </svg>
+              {{ loading ? 'Enregistrement...' : 'Enregistrer' }}
+            </button>
+          </div>
+        </div>
+
+        <div v-if="error" :style="{
+          padding: '15px',
+          background: '#f8d7da',
+          border: '1px solid #f5c6cb',
+          borderRadius: '4px',
+          color: '#721c24',
+          marginBottom: '20px'
+        }">
+          {{ error }}
+        </div>
+
+        <div v-if="success" :style="{
+          padding: '15px',
+          background: '#d4edda',
+          border: '1px solid #c3e6cb',
+          borderRadius: '4px',
+          color: '#155724',
+          marginBottom: '20px'
+        }">
+          {{ success }}
+        </div>
+
+        <!-- Informations générales -->
+        <section :style="sectionStyle">
+          <h2 :style="sectionTitleStyle">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 24px; height: 24px; display: inline-block; vertical-align: middle; margin-right: 10px;">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+            </svg>
+            Informations générales
+          </h2>
+          
+          <div :style="{ marginBottom: '20px' }">
+            <label :style="labelStyle">Nom du thème</label>
+            <input 
+              v-model="currentTheme.name"
+              type="text"
+              placeholder="Mon thème personnalisé"
+              :style="inputStyle"
+            />
+          </div>
+
+          <div :style="{ marginBottom: '20px' }">
+            <label :style="labelStyle">
+              <input 
+                v-model="currentTheme.is_active"
+                type="checkbox"
+                :style="{ marginRight: '8px' }"
+              />
+              Thème actif
+            </label>
+          </div>
+        </section>
+
+        <!-- Polices -->
+        <section :style="sectionStyle">
+          <h2 :style="sectionTitleStyle">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 24px; height: 24px; display: inline-block; vertical-align: middle; margin-right: 10px;">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" />
+            </svg>
+            Polices
+          </h2>
+          
+          <div :style="{ marginBottom: '20px' }">
+            <label :style="labelStyle">Pack de polices</label>
+            <select v-model="currentTheme.font_pack" :style="inputStyle">
+              <option value="system">Système</option>
+              <option value="google-fonts">Google Fonts</option>
+              <option value="custom">Personnalisé</option>
+            </select>
+          </div>
+
+          <div :style="{ marginBottom: '20px' }">
+            <label :style="labelStyle">Taille de base (px)</label>
+            <input 
+              v-model.number="currentTheme.base_font_size"
+              type="number"
+              min="12"
+              max="24"
+              :style="inputStyle"
+            />
+          </div>
+
+          <div :style="{ marginBottom: '20px' }">
+            <label :style="labelStyle">Police des titres</label>
+            <input 
+              v-model="currentTheme.heading_font"
+              type="text"
+              placeholder="Arial, sans-serif"
+              :style="inputStyle"
+            />
+          </div>
+
+          <div :style="{ marginBottom: '20px' }">
+            <label :style="labelStyle">Police du texte</label>
+            <input 
+              v-model="currentTheme.body_font"
+              type="text"
+              placeholder="Georgia, serif"
+              :style="inputStyle"
+            />
+          </div>
+
+          <div :style="{ marginBottom: '20px' }">
+            <label :style="labelStyle">Police des boutons</label>
+            <input 
+              v-model="currentTheme.button_font"
+              type="text"
+              placeholder="Helvetica, sans-serif"
+              :style="inputStyle"
+            />
+          </div>
+        </section>
+
+        <!-- Palette de couleurs -->
+        <section :style="sectionStyle">
+          <h2 :style="sectionTitleStyle">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 24px; height: 24px; display: inline-block; vertical-align: middle; margin-right: 10px;">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4.098 19.902a3.75 3.75 0 005.304 0l6.401-6.402M6.75 21A3.75 3.75 0 013 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 003.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008z" />
+            </svg>
+            Palette de couleurs
+          </h2>
+          
+          <div :style="{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+            gap: '20px'
+          }">
+            <div>
+              <label :style="labelStyle">Primaire</label>
+              <input 
+                v-model="currentTheme.color_primary"
+                type="color"
+                :style="colorInputStyle"
+              />
+            </div>
+            <div>
+              <label :style="labelStyle">Secondaire</label>
+              <input 
+                v-model="currentTheme.color_secondary"
+                type="color"
+                :style="colorInputStyle"
+              />
+            </div>
+            <div>
+              <label :style="labelStyle">Accent</label>
+              <input 
+                v-model="currentTheme.color_accent"
+                type="color"
+                :style="colorInputStyle"
+              />
+            </div>
+            <div>
+              <label :style="labelStyle">Fond</label>
+              <input 
+                v-model="currentTheme.color_background"
+                type="color"
+                :style="colorInputStyle"
+              />
+            </div>
+            <div>
+              <label :style="labelStyle">Texte</label>
+              <input 
+                v-model="currentTheme.color_text"
+                type="color"
+                :style="colorInputStyle"
+              />
+            </div>
+          </div>
+        </section>
+
+        <!-- Boutons -->
+        <section :style="sectionStyle">
+          <h2 :style="sectionTitleStyle">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 24px; height: 24px; display: inline-block; vertical-align: middle; margin-right: 10px;">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Boutons
+          </h2>
+          
+          <div :style="{ marginBottom: '20px' }">
+            <label :style="labelStyle">Rayon de bordure (px)</label>
+            <input 
+              v-model.number="currentTheme.button_radius"
+              type="number"
+              min="0"
+              max="50"
+              :style="inputStyle"
+            />
+          </div>
+
+          <div :style="{ marginBottom: '20px' }">
+            <label :style="labelStyle">Espacement interne (px)</label>
+            <input 
+              v-model.number="currentTheme.button_padding"
+              type="number"
+              min="5"
+              max="30"
+              :style="inputStyle"
+            />
+          </div>
+        </section>
+
+        <!-- Espacement -->
+        <section :style="sectionStyle">
+          <h2 :style="sectionTitleStyle">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 24px; height: 24px; display: inline-block; vertical-align: middle; margin-right: 10px;">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+            </svg>
+            Espacement
+          </h2>
+          
+          <div :style="{ marginBottom: '20px' }">
+            <label :style="labelStyle">Unité d'espacement (px)</label>
+            <input 
+              v-model.number="currentTheme.spacing_unit"
+              type="number"
+              min="4"
+              max="16"
+              :style="inputStyle"
+            />
+            <p :style="{
+              margin: '5px 0 0 0',
+              fontSize: '14px',
+              color: '#6c757d'
+            }">
+              Cette valeur est utilisée comme base pour tous les espacements (marges, paddings)
+            </p>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+definePageMeta({
+  middleware: 'auth'
+})
+
+const activeTab = ref('list')
+const themes = ref([])
+const currentTheme = ref({
+  name: '',
+  is_active: false,
+  font_pack: 'system',
+  base_font_size: 16,
+  heading_font: 'Arial, sans-serif',
+  body_font: 'Georgia, serif',
+  button_font: 'Arial, sans-serif',
+  color_primary: '#007bff',
+  color_secondary: '#6c757d',
+  color_accent: '#28a745',
+  color_background: '#ffffff',
+  color_text: '#212529',
+  button_radius: 4,
+  button_padding: 12,
+  spacing_unit: 8
+})
+
+const loading = ref(false)
+const error = ref('')
+const success = ref('')
+
+const sectionStyle = {
+  marginBottom: '30px',
+  padding: '25px',
+  background: '#f8f9fa',
+  border: '1px solid #dee2e6',
+  borderRadius: '8px'
+}
+
+const sectionTitleStyle = {
+  margin: '0 0 20px 0',
+  fontSize: '20px',
+  fontWeight: 'bold',
+  color: '#212529'
+}
+
+const labelStyle = {
+  display: 'block',
+  marginBottom: '8px',
+  fontWeight: '600',
+  color: '#495057'
+}
+
+const inputStyle = {
+  width: '100%',
+  padding: '10px',
+  border: '1px solid #ced4da',
+  borderRadius: '4px',
+  fontSize: '16px'
+}
+
+const colorInputStyle = {
+  width: '100%',
+  height: '50px',
+  border: '1px solid #ced4da',
+  borderRadius: '4px',
+  cursor: 'pointer'
+}
+
+onMounted(async () => {
+  const { ensureCsrfToken } = useAuth()
+  await ensureCsrfToken()
+  await loadThemes()
+})
+
+async function loadThemes() {
+  try {
+    themes.value = await $fetch('http://localhost:8000/api/themes/', {
+      credentials: 'include'
+    })
+  } catch (err) {
+    console.error('Erreur lors du chargement des thèmes:', err)
+  }
+}
+
+function createNewTheme() {
+  currentTheme.value = {
+    name: '',
+    is_active: false,
+    font_pack: 'system',
+    base_font_size: 16,
+    heading_font: 'Arial, sans-serif',
+    body_font: 'Georgia, serif',
+    button_font: 'Arial, sans-serif',
+    color_primary: '#007bff',
+    color_secondary: '#6c757d',
+    color_accent: '#28a745',
+    color_background: '#ffffff',
+    color_text: '#212529',
+    button_radius: 4,
+    button_padding: 12,
+    spacing_unit: 8
+  }
+  activeTab.value = 'edit'
+}
+
+function editTheme(theme) {
+  currentTheme.value = { ...theme }
+  activeTab.value = 'edit'
+}
+
+async function saveTheme() {
+  loading.value = true
+  error.value = ''
+  success.value = ''
+
+  try {
+    if (currentTheme.value.id) {
+      await $fetch(`http://localhost:8000/api/themes/${currentTheme.value.id}/`, {
+        method: 'PUT',
+        body: currentTheme.value,
+        credentials: 'include'
+      })
+    } else {
+      await $fetch('http://localhost:8000/api/themes/', {
+        method: 'POST',
+        body: currentTheme.value,
+        credentials: 'include'
+      })
+    }
+
+    success.value = 'Thème enregistré avec succès !'
+    await loadThemes()
+    
+    setTimeout(() => {
+      success.value = ''
+      activeTab.value = 'list'
+    }, 2000)
+  } catch (err) {
+    error.value = err.data?.detail || 'Erreur lors de l\'enregistrement'
+    console.error(err)
+  } finally {
+    loading.value = false
+  }
+}
+</script>

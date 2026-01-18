@@ -1,0 +1,287 @@
+<template>
+  <div :style="{
+    display: 'flex',
+    minHeight: '100vh',
+    background: '#ffffff'
+  }">
+    <AdminSidebar title="Footer">
+      <button
+        @click="saveFooter"
+        :disabled="loading"
+        :style="{
+          width: '100%',
+          padding: '12px',
+          background: loading ? '#6c757d' : '#28a745',
+          color: 'white',
+          border: 'none',
+          borderRadius: '4px',
+          fontWeight: 'bold',
+          cursor: loading ? 'not-allowed' : 'pointer',
+          fontSize: '16px'
+        }"
+      >
+        <svg v-if="!loading" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 20px; height: 20px; display: inline-block; vertical-align: middle; margin-right: 8px;">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
+        </svg>
+        {{ loading ? 'Enregistrement...' : 'Enregistrer' }}
+      </button>
+    </AdminSidebar>
+
+    <div :style="{
+      flex: 1,
+      padding: '40px',
+      maxWidth: '800px'
+    }">
+      <h1 :style="{
+        fontSize: '32px',
+        fontWeight: 'bold',
+        marginBottom: '30px',
+        color: '#212529'
+      }">
+        Configuration du Footer
+      </h1>
+
+      <div v-if="error" :style="{
+        padding: '15px',
+        background: '#f8d7da',
+        border: '1px solid #f5c6cb',
+        borderRadius: '4px',
+        color: '#721c24',
+        marginBottom: '20px'
+      }">
+        {{ error }}
+      </div>
+
+      <div v-if="success" :style="{
+        padding: '15px',
+        background: '#d4edda',
+        border: '1px solid #c3e6cb',
+        borderRadius: '4px',
+        color: '#155724',
+        marginBottom: '20px'
+      }">
+        {{ success }}
+      </div>
+
+      <!-- Texte du footer -->
+      <div :style="{ marginBottom: '25px' }">
+        <label :style="{
+          display: 'block',
+          marginBottom: '8px',
+          fontWeight: 'bold',
+          color: '#495057'
+        }">
+          Texte du footer
+        </label>
+        <textarea 
+          v-model="form.text"
+          placeholder="© 2024 Mon Site. Tous droits réservés."
+          :style="{
+            width: '100%',
+            padding: '10px',
+            border: '1px solid #ced4da',
+            borderRadius: '4px',
+            fontSize: '16px',
+            minHeight: '80px',
+            resize: 'vertical'
+          }"
+        />
+      </div>
+
+      <!-- Liens du footer -->
+      <div :style="{ marginBottom: '25px' }">
+        <div :style="{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '15px'
+        }">
+          <label :style="{
+            fontWeight: 'bold',
+            color: '#495057'
+          }">
+            Liens du footer
+          </label>
+          <button
+            @click="addLink"
+            :style="{
+              padding: '8px 16px',
+              background: '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontWeight: 'bold'
+            }"
+          >
+            + Ajouter un lien
+          </button>
+        </div>
+
+        <div 
+          v-for="(link, index) in links" 
+          :key="index"
+          :style="{
+            padding: '15px',
+            background: '#f8f9fa',
+            border: '1px solid #dee2e6',
+            borderRadius: '4px',
+            marginBottom: '10px'
+          }"
+        >
+          <div :style="{
+            display: 'flex',
+            gap: '10px',
+            marginBottom: '10px'
+          }">
+            <input 
+              v-model="link.text"
+              type="text"
+              placeholder="Texte du lien"
+              :style="{
+                flex: 1,
+                padding: '10px',
+                border: '1px solid #ced4da',
+                borderRadius: '4px',
+                fontSize: '16px'
+              }"
+            />
+            <input 
+              v-model="link.url"
+              type="text"
+              placeholder="/page"
+              :style="{
+                flex: 1,
+                padding: '10px',
+                border: '1px solid #ced4da',
+                borderRadius: '4px',
+                fontSize: '16px'
+              }"
+            />
+          </div>
+          <button
+            @click="removeLink(index)"
+            :style="{
+              padding: '8px 15px',
+              background: '#dc3545',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontWeight: 'bold'
+            }"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 20px; height: 20px; display: inline-block; vertical-align: middle; margin-right: 8px;">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+            </svg>
+            Supprimer
+          </button>
+        </div>
+
+        <p v-if="links.length === 0" :style="{
+          color: '#6c757d',
+          fontStyle: 'italic',
+          textAlign: 'center',
+          padding: '20px'
+        }">
+          Aucun lien. Cliquez sur "Ajouter un lien" pour commencer.
+        </p>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+definePageMeta({
+  middleware: 'auth'
+})
+
+const form = ref({
+  text: ''
+})
+
+const links = ref([])
+const loading = ref(false)
+const error = ref('')
+const success = ref('')
+const footerId = ref(null)
+
+onMounted(async () => {
+  const { ensureCsrfToken } = useAuth()
+  await ensureCsrfToken()
+  
+  try {
+    const data = await $fetch('http://localhost:8000/api/footer/', {
+      credentials: 'include'
+    })
+    if (data && data.length > 0) {
+      const footer = data[0]
+      footerId.value = footer.id
+      form.value.text = footer.text
+      
+      // Parse links from JSON
+      if (footer.links) {
+        try {
+          links.value = typeof footer.links === 'string' 
+            ? JSON.parse(footer.links) 
+            : footer.links
+        } catch {
+          links.value = []
+        }
+      }
+    }
+  } catch (err) {
+    error.value = 'Erreur lors du chargement des données'
+    console.error(err)
+  }
+})
+
+function addLink() {
+  links.value.push({
+    text: '',
+    url: ''
+  })
+}
+
+function removeLink(index) {
+  links.value.splice(index, 1)
+}
+
+async function saveFooter() {
+  loading.value = true
+  error.value = ''
+  success.value = ''
+
+  try {
+    const payload = {
+      text: form.value.text,
+      links: links.value
+    }
+
+    if (footerId.value) {
+      await $fetch(`http://localhost:8000/api/footer/${footerId.value}/`, {
+        method: 'PUT',
+        body: payload,
+        credentials: 'include'
+      })
+    } else {
+      const newFooter = await $fetch('http://localhost:8000/api/footer/', {
+        method: 'POST',
+        body: payload,
+        credentials: 'include'
+      })
+      footerId.value = newFooter.id
+    }
+
+    success.value = 'Footer enregistré avec succès !'
+    setTimeout(() => {
+      success.value = ''
+    }, 3000)
+  } catch (err) {
+    error.value = err.data?.detail || 'Erreur lors de l\'enregistrement'
+    console.error(err)
+  } finally {
+    loading.value = false
+  }
+}
+</script>
