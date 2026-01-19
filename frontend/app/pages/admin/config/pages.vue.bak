@@ -1,0 +1,565 @@
+<template>
+  <div :style="{
+    display: 'flex',
+    minHeight: '100vh',
+    background: '#ffffff'
+  }">
+    <AdminSidebar title="Pages">
+      <div :style="{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '10px',
+        maxHeight: '60vh',
+        overflowY: 'auto'
+      }">
+        <button
+          @click="createNewPage"
+          :style="{
+            padding: '12px',
+            background: '#28a745',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+            marginBottom: '10px'
+          }"
+        >
+          ✨ Nouvelle page
+        </button>
+
+        <div 
+          v-for="page in pages" 
+          :key="page.id"
+          @click="selectPage(page)"
+          :style="{
+            padding: '12px',
+            background: selectedPage?.id === page.id ? '#007bff' : '#e9ecef',
+            color: selectedPage?.id === page.id ? 'white' : '#495057',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            textAlign: 'left',
+            fontWeight: '500'
+          }"
+        >
+          {{ page.title }}
+          <svg v-if="page.is_homepage" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" :style="{
+            width: '16px',
+            height: '16px',
+            marginLeft: '5px',
+            display: 'inline-block',
+            verticalAlign: 'middle',
+            opacity: 0.8
+          }">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+          </svg>
+        </div>
+      </div>
+    </AdminSidebar>
+
+    <div :style="{
+      flex: 1,
+      padding: '40px',
+      maxWidth: '900px'
+    }">
+      <!-- Aucune page sélectionnée -->
+      <div v-if="!selectedPage" :style="{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '50vh',
+        color: '#6c757d'
+      }">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" :style="{ width: '64px', height: '64px', marginBottom: '20px' }">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+        </svg>
+        <p :style="{ fontSize: '18px' }">Sélectionnez une page ou créez-en une nouvelle</p>
+      </div>
+
+      <!-- Édition de page -->
+      <div v-if="selectedPage">
+        <div :style="{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '30px'
+        }">
+          <h1 :style="{
+            fontSize: '32px',
+            fontWeight: 'bold',
+            margin: 0,
+            color: '#212529'
+          }">
+            {{ selectedPage.id ? selectedPage.title : 'Nouvelle page' }}
+          </h1>
+          <div :style="{ display: 'flex', gap: '10px' }">
+            <button
+              v-if="selectedPage.id"
+              @click="deletePage"
+              :style="{
+                padding: '10px 20px',
+                background: '#dc3545',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontWeight: 'bold'
+              }"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 20px; height: 20px; display: inline-block; vertical-align: middle; margin-right: 8px;">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+              </svg>
+              Supprimer
+            </button>
+            <button
+              @click="savePage"
+              :disabled="loading"
+              :style="{
+                padding: '10px 20px',
+                background: loading ? '#6c757d' : '#28a745',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                fontWeight: 'bold'
+              }"
+            >
+              <svg v-if="!loading" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 20px; height: 20px; display: inline-block; vertical-align: middle; margin-right: 8px;">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
+              </svg>
+              {{ loading ? 'Enregistrement...' : 'Enregistrer' }}
+            </button>
+          </div>
+        </div>
+
+        <div v-if="error" :style="{
+          padding: '15px',
+          background: '#f8d7da',
+          border: '1px solid #f5c6cb',
+          borderRadius: '4px',
+          color: '#721c24',
+          marginBottom: '20px'
+        }">
+          {{ error }}
+        </div>
+
+        <div v-if="success" :style="{
+          padding: '15px',
+          background: '#d4edda',
+          border: '1px solid #c3e6cb',
+          borderRadius: '4px',
+          color: '#155724',
+          marginBottom: '20px'
+        }">
+          {{ success }}
+        </div>
+
+        <!-- Informations de la page -->
+        <section :style="sectionStyle">
+          <h2 :style="sectionTitleStyle">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 24px; height: 24px; display: inline-block; vertical-align: middle; margin-right: 10px;">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+            </svg>
+            Informations
+          </h2>
+          
+          <div :style="{ marginBottom: '20px' }">
+            <label :style="labelStyle">Titre de la page</label>
+            <input 
+              v-model="selectedPage.title"
+              type="text"
+              placeholder="Ma page"
+              :style="inputStyle"
+            />
+          </div>
+
+          <div :style="{ marginBottom: '20px' }">
+            <label :style="labelStyle">Slug (URL)</label>
+            <input 
+              v-model="selectedPage.slug"
+              type="text"
+              placeholder="ma-page"
+              :style="inputStyle"
+            />
+          </div>
+
+          <div :style="{ marginBottom: '20px' }">
+            <label :style="labelStyle">
+              <input 
+                v-model="selectedPage.is_homepage"
+                type="checkbox"
+                :style="{ marginRight: '8px' }"
+              />
+              Page d'accueil
+            </label>
+          </div>
+
+          <div :style="{ marginBottom: '20px' }">
+            <label :style="labelStyle">Description (SEO)</label>
+            <textarea 
+              v-model="selectedPage.meta_description"
+              placeholder="Description pour les moteurs de recherche"
+              :style="{
+                ...inputStyle,
+                minHeight: '80px',
+                resize: 'vertical'
+              }"
+            />
+          </div>
+
+          <div :style="{ marginBottom: '20px' }">
+            <label :style="labelStyle">Mots-clés (SEO)</label>
+            <input 
+              v-model="selectedPage.meta_keywords"
+              type="text"
+              placeholder="mot1, mot2, mot3"
+              :style="inputStyle"
+            />
+          </div>
+        </section>
+
+        <!-- Sections de la page -->
+        <section :style="sectionStyle">
+          <div :style="{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '20px'
+          }">
+            <h2 :style="{ ...sectionTitleStyle, marginBottom: 0 }">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 24px; height: 24px; display: inline-block; vertical-align: middle; margin-right: 10px;">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
+              </svg>
+              Sections
+            </h2>
+            <button
+              @click="addSection"
+              :style="{
+                padding: '8px 16px',
+                background: '#007bff',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontWeight: 'bold'
+              }"
+            >
+              + Ajouter une section
+            </button>
+          </div>
+
+          <div 
+            v-for="(section, index) in sections" 
+            :key="section.tempId || section.id"
+            :style="{
+              padding: '20px',
+              background: '#ffffff',
+              border: '1px solid #dee2e6',
+              borderRadius: '4px',
+              marginBottom: '15px'
+            }"
+          >
+            <div :style="{
+              display: 'flex',
+              gap: '15px',
+              marginBottom: '15px'
+            }">
+              <div :style="{ flex: 1 }">
+                <label :style="labelStyle">Type de section</label>
+                <select v-model="section.section_type" :style="inputStyle">
+                  <option value="text">Texte</option>
+                  <option value="form">Formulaire</option>
+                  <option value="product">Produit</option>
+                  <option value="event">Événement</option>
+                  <option value="quote">Citation</option>
+                  <option value="images">Images</option>
+                  <option value="video">Vidéo</option>
+                  <option value="chart">Graphique</option>
+                  <option value="audio">Audio</option>
+                  <option value="map">Carte GPS</option>
+                  <option value="html">HTML personnalisé</option>
+                </select>
+              </div>
+              <div :style="{ width: '100px' }">
+                <label :style="labelStyle">Ordre</label>
+                <input 
+                  v-model.number="section.order"
+                  type="number"
+                  :style="inputStyle"
+                />
+              </div>
+            </div>
+
+            <div :style="{ marginBottom: '15px' }">
+              <label :style="labelStyle">Titre de la section</label>
+              <input 
+                v-model="section.title"
+                type="text"
+                placeholder="Titre de la section"
+                :style="inputStyle"
+              />
+            </div>
+
+            <div :style="{ marginBottom: '15px' }">
+              <label :style="labelStyle">Contenu (JSON)</label>
+              <textarea 
+                v-model="section.content_json"
+                placeholder='{"text": "Votre contenu ici..."}'
+                :style="{
+                  ...inputStyle,
+                  minHeight: '120px',
+                  fontFamily: 'monospace',
+                  fontSize: '14px'
+                }"
+              />
+              <p :style="{
+                margin: '5px 0 0 0',
+                fontSize: '12px',
+                color: '#6c757d'
+              }">
+                Format JSON selon le type de section
+              </p>
+            </div>
+
+            <button
+              @click="removeSection(index)"
+              :style="{
+                padding: '8px 16px',
+                background: '#dc3545',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontWeight: 'bold'
+              }"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 20px; height: 20px; display: inline-block; vertical-align: middle; margin-right: 8px;">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+              </svg>
+              Supprimer cette section
+            </button>
+          </div>
+
+          <p v-if="sections.length === 0" :style="{
+            color: '#6c757d',
+            fontStyle: 'italic',
+            textAlign: 'center',
+            padding: '20px'
+          }">
+            Aucune section. Cliquez sur "Ajouter une section" pour commencer.
+          </p>
+        </section>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+definePageMeta({
+  middleware: 'auth'
+})
+
+const pages = ref([])
+const selectedPage = ref(null)
+const sections = ref([])
+const loading = ref(false)
+const error = ref('')
+const success = ref('')
+
+let tempIdCounter = 0
+
+const sectionStyle = {
+  marginBottom: '30px',
+  padding: '25px',
+  background: '#f8f9fa',
+  border: '1px solid #dee2e6',
+  borderRadius: '8px'
+}
+
+const sectionTitleStyle = {
+  margin: '0 0 20px 0',
+  fontSize: '20px',
+  fontWeight: 'bold',
+  color: '#212529'
+}
+
+const labelStyle = {
+  display: 'block',
+  marginBottom: '8px',
+  fontWeight: '600',
+  color: '#495057',
+  fontSize: '14px'
+}
+
+const inputStyle = {
+  width: '100%',
+  padding: '10px',
+  border: '1px solid #ced4da',
+  borderRadius: '4px',
+  fontSize: '16px'
+}
+
+onMounted(async () => {
+  const { ensureCsrfToken } = useAuth()
+  await ensureCsrfToken()
+  await loadPages()
+})
+
+async function loadPages() {
+  try {
+    pages.value = await $fetch('http://localhost:8000/api/pages/', {
+      credentials: 'include'
+    })
+  } catch (err) {
+    console.error('Erreur lors du chargement des pages:', err)
+  }
+}
+
+async function selectPage(page) {
+  selectedPage.value = { ...page }
+  await loadSections(page.id)
+}
+
+async function loadSections(pageId) {
+  try {
+    const allSections = await $fetch('http://localhost:8000/api/page-sections/', {
+      credentials: 'include'
+    })
+    sections.value = allSections
+      .filter(s => s.page === pageId)
+      .map(s => ({
+        ...s,
+        content_json: typeof s.content === 'string' ? s.content : JSON.stringify(s.content, null, 2)
+      }))
+      .sort((a, b) => a.order - b.order)
+  } catch (err) {
+    console.error('Erreur lors du chargement des sections:', err)
+    sections.value = []
+  }
+}
+
+function createNewPage() {
+  selectedPage.value = {
+    title: '',
+    slug: '',
+    is_homepage: false,
+    meta_description: '',
+    meta_keywords: ''
+  }
+  sections.value = []
+}
+
+function addSection() {
+  sections.value.push({
+    tempId: ++tempIdCounter,
+    section_type: 'text',
+    title: '',
+    content_json: '{}',
+    order: sections.value.length + 1
+  })
+}
+
+function removeSection(index) {
+  sections.value.splice(index, 1)
+}
+
+async function savePage() {
+  loading.value = true
+  error.value = ''
+  success.value = ''
+
+  try {
+    let pageId = selectedPage.value.id
+
+    // Sauvegarder la page
+    if (pageId) {
+      await $fetch(`http://localhost:8000/api/pages/${pageId}/`, {
+        method: 'PUT',
+        body: selectedPage.value,
+        credentials: 'include'
+      })
+    } else {
+      const newPage = await $fetch('http://localhost:8000/api/pages/', {
+        method: 'POST',
+        body: selectedPage.value,
+        credentials: 'include'
+      })
+      pageId = newPage.id
+      selectedPage.value.id = pageId
+    }
+
+    // Supprimer les sections existantes
+    const existingSections = await $fetch('http://localhost:8000/api/page-sections/', {
+      credentials: 'include'
+    })
+    for (const section of existingSections.filter(s => s.page === pageId)) {
+      await $fetch(`http://localhost:8000/api/page-sections/${section.id}/`, {
+        method: 'DELETE',
+        credentials: 'include'
+      })
+    }
+
+    // Créer les nouvelles sections
+    for (const section of sections.value) {
+      let content
+      try {
+        content = JSON.parse(section.content_json)
+      } catch {
+        content = { raw: section.content_json }
+      }
+
+      await $fetch('http://localhost:8000/api/page-sections/', {
+        method: 'POST',
+        body: {
+          page: pageId,
+          section_type: section.section_type,
+          title: section.title,
+          content: content,
+          order: section.order
+        },
+        credentials: 'include'
+      })
+    }
+
+    success.value = 'Page enregistrée avec succès !'
+    await loadPages()
+    await loadSections(pageId)
+    
+    setTimeout(() => {
+      success.value = ''
+    }, 3000)
+  } catch (err) {
+    error.value = err.data?.detail || 'Erreur lors de l\'enregistrement'
+    console.error(err)
+  } finally {
+    loading.value = false
+  }
+}
+
+async function deletePage() {
+  if (!confirm('Êtes-vous sûr de vouloir supprimer cette page ?')) {
+    return
+  }
+
+  loading.value = true
+  error.value = ''
+
+  try {
+    await $fetch(`http://localhost:8000/api/pages/${selectedPage.value.id}/`, {
+      method: 'DELETE',
+      credentials: 'include'
+    })
+
+    await loadPages()
+    selectedPage.value = null
+    sections.value = []
+  } catch (err) {
+    error.value = err.data?.detail || 'Erreur lors de la suppression'
+    console.error(err)
+  } finally {
+    loading.value = false
+  }
+}
+</script>
